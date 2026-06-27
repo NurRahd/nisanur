@@ -8,7 +8,6 @@
     "build": "prisma generate && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "postinstall": "prisma generate",
     "db:seed": "node prisma/seed.js",
     "db:migrate": "prisma migrate deploy"
   },
