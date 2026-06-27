@@ -7,8 +7,7 @@ import crumpledPaper from '../assets/kertasrunyuk.png';
 import ppAboutMe from '../assets/ppaboutme.JPG';
 import { api, imageUrl } from '../lib/api';
 import { resolveImg } from '../lib/resolveImg';
-import Sparkles from '../components/Sparkles';
-import './About.css';
+import Sparkles from '../components/Sparkles';import './About.css';
 
 // Resolve a lucide icon by string name
 function LucideIcon({ name, size = 15, strokeWidth = 2.2 }) {
@@ -56,19 +55,6 @@ function FadeIn({ children, delay = 0, className = '' }) {
   );
 }
 
-// Resolve image src — supports both uploaded (UUID→Supabase) and legacy asset names
-function resolveImg(src) {
-  if (!src) return null;
-  if (src.startsWith('http') || src.startsWith('/')) return src;
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}/i;
-  if (uuidPattern.test(src)) {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    return supabaseUrl
-      ? `${supabaseUrl}/storage/v1/object/public/portfolio/${src}`
-      : `/uploads/${src}`;
-  }
-  return new URL(`../assets/${src}`, import.meta.url).href;
-}
 
 export default function About() {
   const [skillGroups, setSkillGroups] = useState([]);
