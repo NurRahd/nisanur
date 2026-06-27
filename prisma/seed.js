@@ -1,13 +1,22 @@
-require('dotenv').config({ path: '.env.local' });
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { config } from 'dotenv';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const prisma = new PrismaClient();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(__dirname, '../.env.local') });
+
+import pg from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const pool = new pg.Pool({ connectionString: process.env.DIRECT_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Admin
   const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
   await prisma.admin.upsert({
     where: { username: process.env.ADMIN_USERNAME || 'admin' },
@@ -16,13 +25,12 @@ async function main() {
   });
   console.log('✓ Admin created');
 
-  // Profile
   const profileData = [
     { key: 'hero_greeting', value: "Hello, I'm Nisa Nur Rahmadani" },
     { key: 'hero_rotating_words', value: 'Nisa, a Fullstack Dev, an AI Learner, a UI Crafter, a Problem Solver' },
-    { key: 'hero_subtitle', value: "I build responsive websites, scalable web applications, and intuitive digital experiences. Passionate about continuous learning, clean code, and creating technology that solves real-world problems." },
+    { key: 'hero_subtitle', value: "I build responsive websites, scalable web applications, and intuitive digital experiences." },
     { key: 'about_subtitle', value: 'Get To Know Me' },
-    { key: 'about_description', value: 'I am an informatics student who loves turning ideas into useful digital solutions. I enjoy learning new technologies and building products that can solve real problems.' },
+    { key: 'about_description', value: 'I am an informatics student who loves turning ideas into useful digital solutions.' },
     { key: 'navbar_brand', value: 'Rahd.' },
     { key: 'footer_copy', value: '© 2026 Rahd. All rights reserved.' },
   ];
@@ -31,7 +39,6 @@ async function main() {
   }
   console.log('✓ Profile seeded');
 
-  // Social links
   await prisma.socialLink.deleteMany();
   await prisma.socialLink.createMany({
     data: [
@@ -45,21 +52,19 @@ async function main() {
   });
   console.log('✓ Social links seeded');
 
-  // Skill groups
   await prisma.skill.deleteMany();
   await prisma.skillGroup.deleteMany();
-  const skillGroupsData = [
+  const groups = [
     { title: 'Frontend', order: 0, skills: [{ name: 'React', iconType: 'lucide', iconName: 'Code2', order: 0 }, { name: 'Next.js', iconType: 'lucide', iconName: 'Box', order: 1 }, { name: 'HTML', iconType: 'lucide', iconName: 'FileJson', order: 2 }, { name: 'CSS', iconType: 'lucide', iconName: 'PenTool', order: 3 }, { name: 'Tailwind CSS', iconType: 'lucide', iconName: 'Wrench', order: 4 }] },
     { title: 'Backend', order: 1, skills: [{ name: 'Node.js', iconType: 'lucide', iconName: 'Server', order: 0 }, { name: 'Express.js', iconType: 'lucide', iconName: 'Terminal', order: 1 }, { name: 'REST API', iconType: 'lucide', iconName: 'FileJson', order: 2 }] },
     { title: 'Database', order: 2, skills: [{ name: 'MySQL', iconType: 'lucide', iconName: 'Database', order: 0 }, { name: 'PostgreSQL', iconType: 'lucide', iconName: 'Database', order: 1 }, { name: 'Firebase', iconType: 'lucide', iconName: 'Flame', order: 2 }] },
     { title: 'Tools & Others', order: 3, skills: [{ name: 'Git', iconType: 'lucide', iconName: 'GitBranch', order: 0 }, { name: 'Docker', iconType: 'lucide', iconName: 'Box', order: 1 }, { name: 'Figma', iconType: 'lucide', iconName: 'PenTool', order: 2 }, { name: 'Linux', iconType: 'lucide', iconName: 'Terminal', order: 3 }, { name: 'VS Code', iconType: 'lucide', iconName: 'Code2', order: 4 }] },
   ];
-  for (const group of skillGroupsData) {
-    await prisma.skillGroup.create({ data: { title: group.title, order: group.order, skills: { create: group.skills } } });
+  for (const g of groups) {
+    await prisma.skillGroup.create({ data: { title: g.title, order: g.order, skills: { create: g.skills } } });
   }
   console.log('✓ Skills seeded');
 
-  // Education
   await prisma.education.deleteMany();
   await prisma.education.createMany({
     data: [
@@ -69,7 +74,7 @@ async function main() {
   });
   console.log('✓ Education seeded');
 
-  console.log('\n✅ Database seeded! Login: admin / admin123');
+  console.log('\n✅ Done! Login: admin / admin123');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
