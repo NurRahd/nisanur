@@ -8,19 +8,15 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "db:seed": "node prisma/seed.js",
-    "db:migrate": "prisma migrate deploy"
+    "db:seed": "node scripts/seed.js"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
     "@supabase/supabase-js": "^2.108.2",
     "bcryptjs": "^3.0.3",
     "busboy": "^1.6.0",
     "framer-motion": "^12.41.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.21.0",
-    "pg": "^8.22.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.0",
@@ -30,10 +26,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
+    "dotenv": "^16.4.7",
     "dotenv-cli": "^11.0.0",
     "oxlint": "^1.69.0",
-    "prisma": "^7.8.0",
-    "tsx": "^4.22.4",
     "vite": "^8.1.0"
   }
 }

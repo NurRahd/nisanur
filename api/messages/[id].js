@@ -1,4 +1,4 @@
-const prisma = require('../_lib/prisma');
+const supabase = require('../_lib/supabase');
 const authMiddleware = require('../_lib/auth');
 const setCors = require('../_lib/cors');
 
@@ -10,7 +10,8 @@ module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
     return authMiddleware(req, res, async () => {
       try {
-        await prisma.message.delete({ where: { id } });
+        const { error } = await supabase.from('Message').delete().eq('id', id);
+        if (error) throw error;
         return res.json({ message: 'Deleted' });
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });

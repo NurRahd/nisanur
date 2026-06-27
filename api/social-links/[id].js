@@ -1,4 +1,4 @@
-const prisma = require('../_lib/prisma');
+const supabase = require('../_lib/supabase');
 const authMiddleware = require('../_lib/auth');
 const setCors = require('../_lib/cors');
 
@@ -11,10 +11,13 @@ module.exports = async (req, res) => {
     return authMiddleware(req, res, async () => {
       try {
         const { platform, label, value, href, iconType, iconName, iconImage, order } = req.body;
-        const link = await prisma.socialLink.update({
-          where: { id },
-          data: { platform, label, value, href, iconType, iconName, iconImage, order },
-        });
+        const { data: link, error } = await supabase
+          .from('SocialLink')
+          .update({ platform, label, value, href, iconType, iconName, iconImage, order, updatedAt: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
         return res.json(link);
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });
@@ -23,7 +26,8 @@ module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
     return authMiddleware(req, res, async () => {
       try {
-        await prisma.socialLink.delete({ where: { id } });
+        const { error } = await supabase.from('SocialLink').delete().eq('id', id);
+        if (error) throw error;
         return res.json({ message: 'Deleted' });
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });

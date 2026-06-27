@@ -1,4 +1,4 @@
-const prisma = require('./_lib/prisma');
+const supabase = require('./_lib/supabase');
 const authMiddleware = require('./_lib/auth');
 const setCors = require('./_lib/cors');
 
@@ -8,7 +8,10 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     try {
-      const items = await prisma.profile.findMany();
+      const { data: items, error } = await supabase
+        .from('Profile')
+        .select();
+      if (error) throw error;
       const profile = {};
       for (const item of items) profile[item.key] = item.value;
       return res.json(profile);
@@ -22,13 +25,11 @@ module.exports = async (req, res) => {
       try {
         const updates = req.body;
         for (const [key, value] of Object.entries(updates)) {
-          await prisma.profile.upsert({
-            where: { key },
-            update: { value: String(value) },
-            create: { key, value: String(value) },
-          });
+          await supabase
+            .from('Profile')
+            .upsert({ key, value: String(value), updatedAt: new Date().toISOString() }, { onConflict: 'key' });
         }
-        const items = await prisma.profile.findMany();
+        const { data: items } = await supabase.from('Profile').select();
         const profile = {};
         for (const item of items) profile[item.key] = item.value;
         return res.json(profile);

@@ -1,4 +1,4 @@
-const prisma = require('./_lib/prisma');
+const supabase = require('./_lib/supabase');
 const authMiddleware = require('./_lib/auth');
 const setCors = require('./_lib/cors');
 const { parseMultipart, uploadToSupabase } = require('./_lib/upload');
@@ -9,7 +9,11 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     try {
-      const items = await prisma.experience.findMany({ orderBy: { order: 'asc' } });
+      const { data: items, error } = await supabase
+        .from('Experience')
+        .select()
+        .order('order', { ascending: true });
+      if (error) throw error;
       return res.json(items);
     } catch { return res.status(500).json({ error: 'Server error' }); }
   }
@@ -24,15 +28,20 @@ module.exports = async (req, res) => {
           const { filename } = await uploadToSupabase(files[0].buffer, files[0].originalname, files[0].mimetype);
           logoImage = filename;
         }
-        const item = await prisma.experience.create({
-          data: {
+        const { data: item, error } = await supabase
+          .from('Experience')
+          .insert({
             period, duration, title, institution,
             bullets: JSON.parse(bullets || '[]'),
             skills: JSON.parse(skills || '[]'),
             logoImage,
             order: Number(order) || 0,
-          },
-        });
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw error;
         return res.status(201).json(item);
       } catch (err) { return res.status(500).json({ error: err.message }); }
     });

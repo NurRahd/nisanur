@@ -1,4 +1,4 @@
-const prisma = require('./_lib/prisma');
+const supabase = require('./_lib/supabase');
 const authMiddleware = require('./_lib/auth');
 const setCors = require('./_lib/cors');
 const { parseMultipart, uploadToSupabase } = require('./_lib/upload');
@@ -9,10 +9,15 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     try {
-      const items = await prisma.activity.findMany({
-        orderBy: { order: 'asc' },
-        include: { images: { orderBy: { order: 'asc' } } },
-      });
+      const { data: items, error } = await supabase
+        .from('Activity')
+        .select('*, ActivityImage(*)')
+        .order('order', { ascending: true });
+      if (error) throw error;
+      for (const item of items) {
+        item.images = (item.ActivityImage || []).sort((a, b) => a.order - b.order);
+        delete item.ActivityImage;
+      }
       return res.json(items);
     } catch { return res.status(500).json({ error: 'Server error' }); }
   }
@@ -24,23 +29,36 @@ module.exports = async (req, res) => {
         const { title, date, description, longDesc, details, tags, order, imagePosData } = fields;
         const parsedPos = imagePosData ? JSON.parse(imagePosData) : [];
 
-        const uploadedImages = await Promise.all(
-          files.map(async (f, i) => {
-            const { filename } = await uploadToSupabase(f.buffer, f.originalname, f.mimetype);
-            return { src: filename, pos: parsedPos[i] || '50% 50%', order: i };
-          })
-        );
-
-        const item = await prisma.activity.create({
-          data: {
+        const { data: activity, error } = await supabase
+          .from('Activity')
+          .insert({
             title, date, description, longDesc,
             details: JSON.parse(details || '[]'),
             tags: JSON.parse(tags || '[]'),
             order: Number(order) || 0,
-            images: { create: uploadedImages },
-          },
-          include: { images: { orderBy: { order: 'asc' } } },
-        });
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw error;
+
+        const uploadedImages = [];
+        for (let i = 0; i < files.length; i++) {
+          const { filename } = await uploadToSupabase(files[i].buffer, files[i].originalname, files[i].mimetype);
+          uploadedImages.push({ src: filename, pos: parsedPos[i] || '50% 50%', order: i, activityId: activity.id });
+        }
+        if (uploadedImages.length > 0) {
+          await supabase.from('ActivityImage').insert(uploadedImages);
+        }
+
+        const { data: item } = await supabase
+          .from('Activity')
+          .select('*, ActivityImage(*)')
+          .eq('id', activity.id)
+          .single();
+        item.images = (item.ActivityImage || []).sort((a, b) => a.order - b.order);
+        delete item.ActivityImage;
         return res.status(201).json(item);
       } catch (err) { return res.status(500).json({ error: err.message }); }
     });

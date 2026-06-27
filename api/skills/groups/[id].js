@@ -1,4 +1,4 @@
-const prisma = require('../../_lib/prisma');
+const supabase = require('../../_lib/supabase');
 const authMiddleware = require('../../_lib/auth');
 const setCors = require('../../_lib/cors');
 const { deleteFromSupabase } = require('../../_lib/upload');
@@ -12,11 +12,16 @@ module.exports = async (req, res) => {
     return authMiddleware(req, res, async () => {
       try {
         const { title, order } = req.body;
-        const group = await prisma.skillGroup.update({
-          where: { id },
-          data: { title, order },
-          include: { skills: { orderBy: { order: 'asc' } } },
-        });
+        const { data: group, error } = await supabase
+          .from('SkillGroup')
+          .update({ title, order })
+          .eq('id', id)
+          .select('*, Skill(*)')
+          .single();
+        if (error) throw error;
+        // Normalize relation key
+        group.skills = (group.Skill || []).sort((a, b) => a.order - b.order);
+        delete group.Skill;
         return res.json(group);
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });
@@ -25,11 +30,14 @@ module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
     return authMiddleware(req, res, async () => {
       try {
-        const group = await prisma.skillGroup.findUnique({ where: { id }, include: { skills: true } });
-        for (const skill of group?.skills || []) {
+        // Get skills to clean up images
+        const { data: skills } = await supabase.from('Skill').select().eq('skillGroupId', id);
+        for (const skill of skills || []) {
           if (skill.iconImage) await deleteFromSupabase(skill.iconImage);
         }
-        await prisma.skillGroup.delete({ where: { id } });
+        // Cascade delete handled by DB foreign key
+        const { error } = await supabase.from('SkillGroup').delete().eq('id', id);
+        if (error) throw error;
         return res.json({ message: 'Deleted' });
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });

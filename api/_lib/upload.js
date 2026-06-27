@@ -1,11 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
+const supabase = require('./supabase');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 const BUCKET = 'portfolio';
 

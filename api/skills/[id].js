@@ -1,4 +1,4 @@
-const prisma = require('../../_lib/prisma');
+const supabase = require('../../_lib/supabase');
 const authMiddleware = require('../../_lib/auth');
 const setCors = require('../../_lib/cors');
 const { parseMultipart, uploadToSupabase, deleteFromSupabase } = require('../../_lib/upload');
@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
       try {
         const { fields, files } = await parseMultipart(req);
         const { name, iconType, iconName, order } = fields;
-        const existing = await prisma.skill.findUnique({ where: { id } });
+        const { data: existing } = await supabase.from('Skill').select().eq('id', id).single();
 
         let iconImage = existing?.iconImage;
 
@@ -26,16 +26,19 @@ module.exports = async (req, res) => {
           iconImage = null;
         }
 
-        const skill = await prisma.skill.update({
-          where: { id },
-          data: {
+        const { data: skill, error } = await supabase
+          .from('Skill')
+          .update({
             name,
             iconType: iconType || 'lucide',
             iconName: iconType === 'lucide' ? (iconName || null) : null,
             iconImage: iconType === 'image' ? iconImage : null,
-            order: order !== undefined ? Number(order) : undefined,
-          },
-        });
+            order: order !== undefined ? Number(order) : existing?.order,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
         return res.json(skill);
       } catch (err) { return res.status(500).json({ error: err.message }); }
     });
@@ -44,9 +47,10 @@ module.exports = async (req, res) => {
   if (req.method === 'DELETE') {
     return authMiddleware(req, res, async () => {
       try {
-        const existing = await prisma.skill.findUnique({ where: { id } });
+        const { data: existing } = await supabase.from('Skill').select().eq('id', id).single();
         if (existing?.iconImage) await deleteFromSupabase(existing.iconImage);
-        await prisma.skill.delete({ where: { id } });
+        const { error } = await supabase.from('Skill').delete().eq('id', id);
+        if (error) throw error;
         return res.json({ message: 'Deleted' });
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });

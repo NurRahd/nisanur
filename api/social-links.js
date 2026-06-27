@@ -1,4 +1,4 @@
-const prisma = require('./_lib/prisma');
+const supabase = require('./_lib/supabase');
 const authMiddleware = require('./_lib/auth');
 const setCors = require('./_lib/cors');
 
@@ -8,7 +8,11 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     try {
-      const links = await prisma.socialLink.findMany({ orderBy: { order: 'asc' } });
+      const { data: links, error } = await supabase
+        .from('SocialLink')
+        .select()
+        .order('order', { ascending: true });
+      if (error) throw error;
       return res.json(links);
     } catch { return res.status(500).json({ error: 'Server error' }); }
   }
@@ -17,9 +21,18 @@ module.exports = async (req, res) => {
     return authMiddleware(req, res, async () => {
       try {
         const { platform, label, value, href, iconType, iconName, iconImage, order } = req.body;
-        const link = await prisma.socialLink.create({
-          data: { platform, label, value, href, iconType: iconType || 'image', iconName, iconImage, order: order ?? 0 },
-        });
+        const { data: link, error } = await supabase
+          .from('SocialLink')
+          .insert({
+            platform, label, value, href,
+            iconType: iconType || 'image', iconName, iconImage,
+            order: order ?? 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw error;
         return res.status(201).json(link);
       } catch { return res.status(500).json({ error: 'Server error' }); }
     });

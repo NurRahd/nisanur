@@ -1,4 +1,4 @@
-const prisma = require('../../../_lib/prisma');
+const supabase = require('../../../_lib/supabase');
 const authMiddleware = require('../../../_lib/auth');
 const setCors = require('../../../_lib/cors');
 
@@ -10,7 +10,13 @@ module.exports = async (req, res) => {
   return authMiddleware(req, res, async () => {
     try {
       const id = Number(req.query.id);
-      const msg = await prisma.message.update({ where: { id }, data: { read: true } });
+      const { data: msg, error } = await supabase
+        .from('Message')
+        .update({ read: true })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
       return res.json(msg);
     } catch { return res.status(500).json({ error: 'Server error' }); }
   });
