@@ -1,15 +1,20 @@
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 /**
- * Returns the full URL for an uploaded file.
- * Falls back to the original src (for static assets) if it doesn't look like a UUID filename.
+ * Resolve image URL.
+ * - UUID filename → Supabase Storage public URL
+ * - Legacy asset name → src/assets path
+ * - Already full URL → as-is
  */
 export function imageUrl(filename) {
   if (!filename) return null;
   if (filename.startsWith('http') || filename.startsWith('/')) return filename;
   const uuidPattern = /^[0-9a-f-]{36}\./i;
   if (uuidPattern.test(filename)) {
-    // Use the Vite proxy path so it works in dev and prod
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (supabaseUrl) {
+      return `${supabaseUrl}/storage/v1/object/public/portfolio/${filename}`;
+    }
     return `/uploads/${filename}`;
   }
   return `/src/assets/${filename}`;

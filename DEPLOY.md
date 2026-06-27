@@ -1,53 +1,36 @@
-# Panduan Deploy — nisanur.vercel.app
+# Deploy ke Vercel + Supabase
 
-## Langkah 1: Push ke GitHub
-
-Buka terminal di folder project ini, lalu jalankan:
-
-```bash
-git init
-git add .
-git commit -m "initial commit"
-```
-
-Buat repo baru di https://github.com/new (nama: `portfolio-nisanur`, kosong, jangan tambah README)
-
-Lalu:
-```bash
-git remote add origin https://github.com/USERNAME/portfolio-nisanur.git
-git branch -M main
-git push -u origin main
-```
-Ganti `USERNAME` dengan username GitHub kamu.
+## Stack
+- **Frontend + API**: Vercel (Serverless Functions)
+- **Database**: Supabase (PostgreSQL)
+- **Storage gambar**: Supabase Storage
 
 ---
 
-## Langkah 2: Deploy Backend ke Railway
+## Langkah 1: Setup Supabase
 
-1. Buka https://railway.app → Login dengan GitHub
-2. Klik **New Project** → **Deploy from GitHub repo**
-3. Pilih repo `portfolio-nisanur`
-4. Klik **Add Service** → **Database** → **PostgreSQL**
-5. Klik service **backend** → tab **Settings**:
-   - **Root Directory**: `backend`
-   - **Start Command**: `node server.js`
-6. Tab **Variables** → tambahkan satu per satu:
+1. Buka https://supabase.com → New project
+   - Name: `nisanur`
+   - Password: buat yang kuat, **catat!**
+   - Region: Southeast Asia (Singapore)
+2. Tunggu ~2 menit hingga ready.
 
-| Key | Value |
-|-----|-------|
-| `DATABASE_URL` | *Copy dari PostgreSQL service (sudah otomatis tersedia)* |
-| `JWT_SECRET` | `portfolio-nisanur-secret-2026-ganti-ini` |
-| `PORT` | `3001` |
-| `ADMIN_USERNAME` | `admin` |
-| `ADMIN_PASSWORD` | `admin123` |
-| `FRONTEND_URL` | `https://nisanur.vercel.app` |
+### Ambil credentials:
+Pergi ke **Settings → API**:
+- Copy **Project URL** → ini `SUPABASE_URL`
+- Copy **service_role** key (bukan anon) → ini `SUPABASE_SERVICE_KEY`
 
-7. Railway akan deploy otomatis. Tunggu hingga status **Active**.
-8. Klik domain yang muncul, contoh: `https://portfolio-nisanur-production.up.railway.app`
-9. **Catat URL Railway ini** — akan dipakai di langkah berikutnya.
+Pergi ke **Settings → Database → Connection string**:
+- Tab **Transaction** (port 6543) → ini `DATABASE_URL`
+- Tab **Session** (port 5432) → ini `DIRECT_URL`
 
-### Setup Database (lakukan sekali)
-Di Railway, buka tab **Shell** pada service backend, lalu jalankan:
+### Buat Storage bucket:
+1. Pergi ke **Storage** → **New bucket**
+2. Name: `portfolio`
+3. Centang **Public bucket** → Save
+
+### Jalankan migration (dari lokal):
+Isi `.env.local` dengan semua credentials Supabase, lalu:
 ```bash
 npx prisma migrate deploy
 node prisma/seed.js
@@ -55,51 +38,69 @@ node prisma/seed.js
 
 ---
 
-## Langkah 3: Deploy Frontend ke Vercel
+## Langkah 2: Push ke GitHub
 
-1. Buka https://vercel.com → Login dengan GitHub
-2. Klik **Add New Project** → Import repo `portfolio-nisanur`
+```bash
+git add .
+git commit -m "ready for deploy"
+git remote add origin https://github.com/USERNAME/nisanur.git
+git branch -M main
+git push -u origin main
+```
+
+---
+
+## Langkah 3: Deploy ke Vercel
+
+1. Buka https://vercel.com → **Add New Project**
+2. Import repo `nisanur` dari GitHub
 3. Settings:
-   - **Framework Preset**: Vite *(otomatis terdeteksi)*
-   - **Root Directory**: `.` *(biarkan default)*
+   - **Framework**: Vite
+   - **Root Directory**: `.` (default)
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-4. **Environment Variables**:
+
+4. **Environment Variables** — tambahkan semua ini:
 
 | Key | Value |
 |-----|-------|
-| `VITE_API_URL` | `https://URL_RAILWAY_KAMU/api` |
+| `DATABASE_URL` | `postgresql://postgres.[REF]:[PASS]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true` |
+| `DIRECT_URL` | `postgresql://postgres.[REF]:[PASS]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres` |
+| `JWT_SECRET` | string acak panjang |
+| `ADMIN_USERNAME` | `admin` |
+| `ADMIN_PASSWORD` | password kamu |
+| `SUPABASE_URL` | `https://XXXX.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | service_role key dari Supabase |
+| `VITE_SUPABASE_URL` | `https://XXXX.supabase.co` (sama dengan SUPABASE_URL) |
+| `VITE_API_URL` | `/api` |
+| `FRONTEND_URL` | `https://nisanur.vercel.app` |
 
-   Ganti `URL_RAILWAY_KAMU` dengan URL dari langkah 2.
+5. Klik **Deploy**
 
-5. Klik **Deploy** → tunggu selesai.
-6. Pergi ke **Settings → Domains** → ketik `nisanur` → klik **Add**
-   - Domain final: `nisanur.vercel.app`
+6. Setelah deploy → **Settings → Domains** → ketik `nisanur` → Add
+   - URL: `https://nisanur.vercel.app`
 
 ---
 
-## Hasil Akhir
+## Hasil
 
-| Halaman | URL |
-|---------|-----|
+| | URL |
+|--|-----|
 | Portfolio | https://nisanur.vercel.app |
-| Admin Panel | https://nisanur.vercel.app/admin |
-| Backend API | https://URL_RAILWAY/api |
+| Admin | https://nisanur.vercel.app/admin |
+| API | https://nisanur.vercel.app/api/health |
 
-**Login Admin:**
-- Username: `admin`
-- Password: `admin123`
+**Login admin**: `admin` / password yang kamu set
 
-> ⚠️ Ganti password segera setelah pertama login via Admin → Password section!
+> ⚠️ Ganti password via Admin → Password segera!
 
 ---
 
-## Update setelah ada perubahan
+## Update kode
 
-Cukup push ke GitHub:
 ```bash
 git add .
 git commit -m "update"
 git push
 ```
-Vercel dan Railway akan auto-redeploy.
+Vercel auto-redeploy dalam ~1 menit.

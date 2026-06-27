@@ -16,10 +16,10 @@ model Admin {
 }
 
 model Profile {
-  id          Int    @id @default(autoincrement())
-  key         String @unique
-  value       String
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model SocialLink {
@@ -28,9 +28,9 @@ model SocialLink {
   label     String
   value     String
   href      String
-  iconType  String   @default("image") // "image" | "lucide"
-  iconName  String?  // lucide icon name
-  iconImage String?  // image filename
+  iconType  String   @default("image")
+  iconName  String?
+  iconImage String?
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -46,9 +46,9 @@ model SkillGroup {
 model Skill {
   id           Int        @id @default(autoincrement())
   name         String
-  iconType     String     @default("lucide") // "lucide" | "image"
-  iconName     String?    // lucide icon name (used when iconType = "lucide")
-  iconImage    String?    // uploaded image filename (used when iconType = "image")
+  iconType     String     @default("lucide")
+  iconName     String?
+  iconImage    String?
   order        Int        @default(0)
   skillGroup   SkillGroup @relation(fields: [skillGroupId], references: [id], onDelete: Cascade)
   skillGroupId Int
@@ -60,24 +60,24 @@ model Experience {
   duration    String
   title       String
   institution String
-  bullets     String[] // array of bullet points
-  skills      String[] // array of skill tags
-  logoImage   String?  // uploaded image filename
+  bullets     String[]
+  skills      String[]
+  logoImage   String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Education {
-  id         Int      @id @default(autoincrement())
-  school     String
-  degree     String
-  period     String
-  score      String
-  logoImage  String?
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  school    String
+  degree    String
+  period    String
+  score     String
+  logoImage String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Certificate {
@@ -87,8 +87,8 @@ model Certificate {
   certificateId String
   issued        String
   expires       String
-  file          String?  // URL to certificate
-  image         String?  // uploaded image filename
+  file          String?
+  image         String?
   imagePos      String   @default("50% 50%")
   imageFit      String   @default("cover")
   imageZoom     Float    @default(1)
@@ -98,22 +98,22 @@ model Certificate {
 }
 
 model Activity {
-  id          Int              @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   title       String
   date        String
   description String
   longDesc    String
   details     String[]
   tags        String[]
-  order       Int              @default(0)
+  order       Int             @default(0)
   images      ActivityImage[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model ActivityImage {
   id         Int      @id @default(autoincrement())
-  src        String   // uploaded image filename
+  src        String
   pos        String   @default("50% 50%")
   order      Int      @default(0)
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
@@ -121,22 +121,22 @@ model ActivityImage {
 }
 
 model Project {
-  id       Int      @id @default(autoincrement())
-  title    String
-  desc     String
-  longDesc String
-  features String[]
-  tags     String[]
-  cat      String
-  pos      String   @default("50% 50%")
-  github   String?
-  demo     String?
-  image    String?  // thumbnail (backward compat)
-  images   ProjectImage[]
-  featured Boolean  @default(false)
-  order    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int            @id @default(autoincrement())
+  title     String
+  desc      String
+  longDesc  String
+  features  String[]
+  tags      String[]
+  cat       String
+  pos       String         @default("50% 50%")
+  github    String?
+  demo      String?
+  image     String?
+  images    ProjectImage[]
+  featured  Boolean        @default(false)
+  order     Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }
 
 model ProjectImage {

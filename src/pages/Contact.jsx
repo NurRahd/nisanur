@@ -11,6 +11,13 @@ import './Contact.css';
 function resolveIconImg(filename) {
   if (!filename) return null;
   if (filename.startsWith('http')) return filename;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}/i;
+  if (uuidPattern.test(filename)) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    return supabaseUrl
+      ? `${supabaseUrl}/storage/v1/object/public/portfolio/${filename}`
+      : `/uploads/${filename}`;
+  }
   return new URL(`../assets/${filename}`, import.meta.url).href;
 }
 

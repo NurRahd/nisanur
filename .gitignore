@@ -28,5 +28,9 @@ backend/.env
 backend/.env.production
 backend/uploads/
 
+# Root env
+.env.local
+.env
+
 # Prisma
 backend/node_modules/

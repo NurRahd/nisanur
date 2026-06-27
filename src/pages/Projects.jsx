@@ -16,7 +16,12 @@ function resolveImg(src) {
   if (!src) return collage;
   if (src.startsWith('http') || src.startsWith('/')) return src;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}/i;
-  if (uuidPattern.test(src)) return `/uploads/${src}`;
+  if (uuidPattern.test(src)) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    return supabaseUrl
+      ? `${supabaseUrl}/storage/v1/object/public/portfolio/${src}`
+      : `/uploads/${src}`;
+  }
   return new URL(`../assets/${src}`, import.meta.url).href;
 }
 

@@ -6,6 +6,7 @@ import flowerCluster from '../assets/flower-cluster.png';
 import crumpledPaper from '../assets/kertasrunyuk.png';
 import ppAboutMe from '../assets/ppaboutme.JPG';
 import { api, imageUrl } from '../lib/api';
+import { resolveImg } from '../lib/resolveImg';
 import Sparkles from '../components/Sparkles';
 import './About.css';
 
@@ -55,13 +56,17 @@ function FadeIn({ children, delay = 0, className = '' }) {
   );
 }
 
-// Resolve image src — supports both uploaded (UUID) and legacy asset names
+// Resolve image src — supports both uploaded (UUID→Supabase) and legacy asset names
 function resolveImg(src) {
   if (!src) return null;
   if (src.startsWith('http') || src.startsWith('/')) return src;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}/i;
-  if (uuidPattern.test(src)) return `/uploads/${src}`;
-  // Try to load via dynamic import (for legacy seeded filenames)
+  if (uuidPattern.test(src)) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    return supabaseUrl
+      ? `${supabaseUrl}/storage/v1/object/public/portfolio/${src}`
+      : `/uploads/${src}`;
+  }
   return new URL(`../assets/${src}`, import.meta.url).href;
 }
 
